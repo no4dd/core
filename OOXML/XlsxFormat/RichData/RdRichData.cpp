@@ -301,7 +301,7 @@ std::to_wstring(m_arrItems.size()) + L"\">");
 		else
 		{
 			writer.WriteString(L">");
-			writer.WriteString(m_sContent);
+			writer.WriteEncodeXmlString(m_sContent);
 			writer.WriteString(L"</fb>");
 		}
 	}
@@ -346,7 +346,9 @@ std::to_wstring(m_arrItems.size()) + L"\">");
 			writer.WriteString(L">");
 			for (auto v : m_arrV)
 			{
-				writer.WriteString(L"<v>" + v + L"</v>");
+				writer.WriteString(L"<v>");
+				writer.WriteEncodeXmlString(v);
+				writer.WriteString(L"</v>");
 			}
 			if (m_oFb.IsInit())
 				m_oFb->toXML();

@@ -2146,6 +2146,17 @@ namespace OOX
                     case 0x24: m_oValue->m_sText = L"#NUM!"; break;
                     case 0x2A: m_oValue->m_sText = L"#N/A"; break;
                     case 0x2B: m_oValue->m_sText = L"#GETTING_DATA"; break;
+                    // Private codes for post-ECMA-376 errors, produced only by
+                    // our own writers (sdkjs cell/model/Workbook.js toXLSB).
+                    // Safe to decode unconditionally: a spec-legal .xlsb from
+                    // any other producer can never contain these values.
+                    case 0x30: m_oValue->m_sText = L"#SPILL!"; break;
+                    case 0x31: m_oValue->m_sText = L"#CALC!"; break;
+                    case 0x32: m_oValue->m_sText = L"#BLOCKED!"; break;
+                    case 0x33: m_oValue->m_sText = L"#BUSY!"; break;
+                    case 0x34: m_oValue->m_sText = L"#CONNECT!"; break;
+                    case 0x35: m_oValue->m_sText = L"#EXTERNAL!"; break;
+                    case 0x36: m_oValue->m_sText = L"#FIELD!"; break;
 				}
 			}
             else if (XLSB::rt_CellBool == nType || XLSB::rt_FmlaBool == nType)

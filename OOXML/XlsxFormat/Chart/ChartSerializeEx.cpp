@@ -1548,8 +1548,13 @@ xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\""
 		{
 			m_visibility->toXML(writer);
 		}
-		if (m_aggregation.IsInit())
+		if (m_aggregation.IsInit() && *m_aggregation)
 		{
+			// <cx:aggregation/> is a presence-flag (empty node): emit it only when
+			// the flag is actually true. m_aggregation is a nullable_bool that is
+			// initialised to false for numeric-binning histograms (Auto/BinWidth/
+			// BinCount); emitting the element for a false value made every reopened
+			// histogram read back as ChartBinType.Category.
 			writer.WriteString(L"<cx:aggregation/>");
 		}
 		if (m_binning.IsInit())

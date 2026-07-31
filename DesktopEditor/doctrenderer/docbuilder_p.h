@@ -458,6 +458,7 @@ namespace NSDoctRenderer
 		std::wstring m_sCommandsBeforeContextCreated;
 
 		std::wstring m_sX2tPath;
+		std::wstring m_sConfigPath;
 
 		CV8RealTimeWorker* m_pWorker;
 
@@ -515,7 +516,11 @@ namespace NSDoctRenderer
 
 			m_sX2tPath = sWorkDir;
 
-			CDoctRendererConfig::Parse(sWorkDir);
+			std::wstring sConfigDir = m_sConfigPath;
+			if (sConfigDir.empty() || !NSDirectory::Exists(sConfigDir))
+				sConfigDir = sWorkDir;
+
+			CDoctRendererConfig::Parse(sConfigDir);
 
 			CheckFonts(m_oParams.m_bCheckFonts);
 

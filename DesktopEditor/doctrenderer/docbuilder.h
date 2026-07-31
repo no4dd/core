@@ -448,6 +448,10 @@ namespace NSDoctRenderer
 		 * Default: true
 		 * --work-directory - The path to the temporary directory.
 		 * Default: ""
+		 * --config-directory - The path containing DoctRenderer.config. This
+		 * can select an isolated SDK without changing the trusted converter
+		 * executable and empty-template directory.
+		 * Default: the work directory
 		 * --cache-scripts - Specifies if the sdkjs scripts are cached (true/false).
 		 * Default: true
 		 * --save-use-only-names - Specifies if the destination paths are used (for server work) (true/false). For example: /home/user/1.txt => /tmp/1.txt

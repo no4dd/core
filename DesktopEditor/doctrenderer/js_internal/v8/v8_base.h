@@ -682,6 +682,16 @@ namespace NSJSBase
 				value = v8::Uint8Array::New(_buffer, 0, (size_t)count);
 #endif
 			}
+			else
+			{
+				// New documents have no Editor.bin changes yet.  Keep the JS
+				// value valid for that legitimate zero-length buffer; leaving
+				// the Local<Uint8Array> empty makes OpenFile dereference an
+				// uninitialised V8 handle before the builder API can start.
+				v8::Local<v8::ArrayBuffer> oArrayBuffer =
+						v8::ArrayBuffer::New(CV8Worker::GetCurrent(), 0);
+				value = v8::Uint8Array::New(oArrayBuffer, 0, 0);
+			}
 		}
 		virtual ~CJSTypedArrayV8()
 		{

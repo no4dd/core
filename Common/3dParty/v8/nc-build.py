@@ -41,10 +41,30 @@ def apply_patches():
     patches_dir = script_dir / "tools" / "8.9" / "x64-linux-dynamic"
 
     patches = [
-        { "name": "gclient_paths.patch", "dir": depot_tools_path },
         { "name": "jinja2.patch", "dir": v8_src_path / "third_party" / "jinja2" },
         { "name": "buildgn.patch", "dir": v8_src_path },
     ]
+
+    # depot_tools is a moving bootstrap dependency.  The historical patch
+    # only removes four functools caches, but its surrounding quote style has
+    # changed upstream and makes `git apply` reject an otherwise identical
+    # edit.  Apply the semantic change with an exact-count guard instead so a
+    # future structural change fails closed rather than silently patching the
+    # wrong code.
+    gclient_paths = depot_tools_path / "gclient_paths.py"
+    if gclient_paths.is_file():
+        content = gclient_paths.read_text()
+        decorator = "@functools.lru_cache\n"
+        decorator_count = content.count(decorator)
+        # Current depot_tools added one more cache around the same mutable
+        # gclient configuration path; both the historical four-decorator
+        # layout and the current five-decorator layout are expected.
+        if decorator_count in (4, 5):
+            gclient_paths.write_text(content.replace(decorator, ""))
+        elif decorator_count != 0:
+            nc.abort_op(
+                f"Unexpected gclient_paths.py cache layout: found {decorator_count} decorators"
+            )
 
     for patch in patches:
         if patch[ "dir" ].is_dir():

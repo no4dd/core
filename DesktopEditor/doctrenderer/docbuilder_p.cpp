@@ -326,10 +326,19 @@ bool CV8RealTimeWorker::OpenFile(const std::wstring& sBasePath, const std::wstri
 	if (!bIsBreak)
 	{
 		CChangesWorker oWorkerLoader;
-		int nVersion = oWorkerLoader.OpenNative(pNative->GetFilePath());
+		const std::wstring sEditorBin = pNative->GetFilePath();
+		const bool bHasEditorBin = NSFile::CFileBinary::Exists(sEditorBin);
+		int nVersion = bHasEditorBin ? oWorkerLoader.OpenNative(sEditorBin) : 0;
 
 		JSSmart<CJSValue> args_open[3];
-		args_open[0] = oWorkerLoader.GetDataFull()->toObject()->toValue();
+		// A freshly-created document has no Editor.bin payload, but the native
+		// reader still requires the four-byte zero change-count header.  An
+		// uninitialised/zero-byte Uint8Array makes BinaryFileReader consume
+		// arbitrary data and can exhaust the V8 heap.
+		BYTE pEmptyChanges[4] = { 0, 0, 0, 0 };
+		args_open[0] = bHasEditorBin
+				? oWorkerLoader.GetDataFull()->toObject()->toValue()
+				: CJSContext::createUint8Array(pEmptyChanges, 4, true)->toObject()->toValue();
 		args_open[1] = CJSContext::createInt(nVersion);
 		std::wstring sXlsx = NSFile::GetDirectoryName(pNative->GetFilePath()) + L"/Editor.xlsx";
 		args_open[2] = NSFile::CFileBinary::Exists(sXlsx) ? CJSContext::createString(sXlsx) : CJSContext::createUndefined();
@@ -1557,6 +1566,8 @@ namespace NSDoctRenderer
 		}
 		else if (sParam == "--work-directory")
 			m_pInternal->m_oParams.m_sWorkDir = std::wstring(value);
+		else if (sParam == "--config-directory")
+			m_pInternal->m_sConfigPath = std::wstring(value);
 		else if (sParam == "--cache-scripts")
 			m_pInternal->m_bIsUseCache = (std::wstring(value) == L"true");
 		else if (sParam == "--save-use-only-names")

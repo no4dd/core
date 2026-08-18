@@ -43,7 +43,7 @@ namespace PPTX
 		void CustomShowId::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
 		{
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
-			pWriter->WriteInt2(0, id);
+			pWriter->WriteUInt2(0, id);
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 		}
 		void CustomShowId::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
@@ -52,7 +52,7 @@ namespace PPTX
 
 			pWriter->StartAttributes();
 
-			pWriter->WriteAttribute(L"id", id);
+			pWriter->WriteAttribute2(L"id", id);
 
 			pWriter->EndAttributes();
 
@@ -71,7 +71,7 @@ namespace PPTX
 					break;
 
 				if (0 == _at)
-					id = pReader->GetLong();
+					id = pReader->GetULong();
 				else
 					break;
 			}

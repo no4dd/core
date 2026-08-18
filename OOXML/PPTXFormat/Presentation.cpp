@@ -254,6 +254,12 @@ namespace PPTX
 		}
 		pWriter->WriteRecord2(9, m_pJsaProject);
 		pWriter->WriteRecord2(10, comments);
+		if (custShowLst.IsInit())
+		{
+			pWriter->StartRecord(11);
+			custShowLst->toPPTY(pWriter, sldIdLst);
+			pWriter->EndRecord();
+		}
 
 		pWriter->EndRecord();
 	}
@@ -392,6 +398,11 @@ namespace PPTX
 				comments = new PPTX::Comments(OOX::File::m_pMainDocument);
 				comments->fromPPTY(pReader);
 			}break;
+			case 11:
+			{
+				custShowLst = new nsPresentation::CustShowLst();
+				custShowLst->fromPPTY(pReader);
+			}break;
 			default:
 			{
 				pReader->SkipRecord();
@@ -459,7 +470,8 @@ namespace PPTX
 
 			pWriter->EndNode(L"p:custDataLst");
 		}
-		pWriter->Write(custShowLst);
+		if (custShowLst.IsInit())
+			custShowLst->toXmlWriter(pWriter, sldIdLst);
 
 		pWriter->Write(defaultTextStyle);
 

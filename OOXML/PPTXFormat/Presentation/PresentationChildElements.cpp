@@ -457,29 +457,52 @@ namespace PPTX
 		}
 		void CustShowLst::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
 		{
-			pWriter->WriteRecordArray(0, 0, arCustShowLst);
+			toPPTY(pWriter, std::vector<Logic::XmlId>());
+		}
+		void CustShowLst::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const
+		{
+			pWriter->StartRecord(0);
+			pWriter->WriteULONG(static_cast<ULONG>(arCustShowLst.size()));
+			for (const auto& oShow : arCustShowLst)
+			{
+				pWriter->StartRecord(0);
+				oShow.toPPTY(pWriter, arSlides);
+				pWriter->EndRecord();
+			}
+			pWriter->EndRecord();
 		}
 		void CustShowLst::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
+		{
+			toXmlWriter(pWriter, std::vector<Logic::XmlId>());
+		}
+		void CustShowLst::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const
 		{
 			pWriter->StartNode(L"p:custShowLst");
 			
 			pWriter->StartAttributes();
 			pWriter->EndAttributes();
 
-			pWriter->WriteArray2(arCustShowLst);
+			for (const auto& oShow : arCustShowLst)
+				oShow.toXmlWriter(pWriter, arSlides);
 
 			pWriter->EndNode(L"p:custShowLst");
 		}
 //----------------------------------------------------------------------------------------------------------------------
 		void CustShow::fromXML(XmlUtils::CXmlNode& node)
 		{
+			XmlMacroReadAttributeBase(node, L"name", name);
+			XmlMacroReadAttributeBase(node, L"id", id);
+			XmlUtils::CXmlNode oNodeExtLst;
+			if (node.GetNode(L"p:extLst", oNodeExtLst) && oNodeExtLst.IsValid())
+				extLstXml = oNodeExtLst.GetXml();
+
 			XmlUtils::CXmlNode oNodeSldIdLst;
-			if (node.GetNode(L"p:sldIdLst", oNodeSldIdLst))
+			if (node.GetNode(L"p:sldLst", oNodeSldIdLst))
 			{
 				if (oNodeSldIdLst.IsValid())
 				{
 					std::vector<XmlUtils::CXmlNode> arrNodeSldId;
-					if (oNodeSldIdLst.GetNodes(L"sldId", arrNodeSldId))
+					if (oNodeSldIdLst.GetNodes(L"p:sld", arrNodeSldId))
 
 					for (auto n : arrNodeSldId)
 					{
@@ -495,45 +518,110 @@ namespace PPTX
 		}
 		void CustShow::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
 		{
+			toXmlWriter(pWriter, std::vector<Logic::XmlId>());
+		}
+		void CustShow::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const
+		{
 			pWriter->StartNode(L"p:custShow");
 
 			pWriter->StartAttributes();
+			pWriter->WriteAttribute2(L"name", name);
+			pWriter->WriteAttribute2(L"id", id);
 			pWriter->EndAttributes();
 
-			pWriter->StartNode(L"p:sldIdLst");
+			pWriter->StartNode(L"p:sldLst");
 			pWriter->EndAttributes();
-			for (auto sld : arSldIdLst)
+			const size_t nCount = arSldIndexLst.empty() ? arSldIdLst.size() : arSldIndexLst.size();
+			for (size_t nIndex = 0; nIndex < nCount; ++nIndex)
 			{
-				pWriter->StartNode(L"p:sldId");
-				std::wstring sRid = sld.ToString();
-				if (sRid.empty() == false)
+				std::wstring sRid;
+				if (false == arSldIndexLst.empty())
 				{
-					pWriter->WriteAttribute(L"r:id", sRid);
+					const int nSlide = arSldIndexLst[nIndex];
+					if (nSlide >= 0 && static_cast<size_t>(nSlide) < arSlides.size())
+						sRid = arSlides[nSlide].rid.ToString();
 				}
+				else
+					sRid = arSldIdLst[nIndex].ToString();
+				if (sRid.empty())
+					continue;
+				pWriter->StartNode(L"p:sld");
+				pWriter->WriteAttribute(L"r:id", sRid);
 				pWriter->EndAttributes();
-				pWriter->EndNode(L"p:sldId");
+				pWriter->EndNode(L"p:sld");
 			}
-			pWriter->EndNode(L"p:sldIdLst");
+			pWriter->EndNode(L"p:sldLst");
+			if (extLstXml.IsInit())
+				pWriter->WriteString(*extLstXml);
 
 			pWriter->EndNode(L"p:custShow");
 		}
 		void CustShow::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
 		{
-			pWriter->StartRecord(0);
+			toPPTY(pWriter, std::vector<Logic::XmlId>());
+		}
+		void CustShow::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const
+		{
+			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
+			pWriter->WriteString2(0, name);
+			pWriter->WriteUInt2(1, id);
+			pWriter->WriteString2(2, extLstXml);
+			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 
-			_UINT32 len = (_UINT32)arSldIdLst.size();
-			pWriter->WriteULONG(len);
-
-			for (_UINT32 i = 0; i < len; ++i)
+			std::vector<int> arIndexes = arSldIndexLst;
+			if (arIndexes.empty())
 			{
-				pWriter->WriteString(arSldIdLst[i].ToString());
+				for (const auto& oRid : arSldIdLst)
+				{
+					int nResolved = -1;
+					for (size_t nSlide = 0; nSlide < arSlides.size(); ++nSlide)
+					{
+						if (arSlides[nSlide].rid.ToString() == oRid.ToString())
+						{
+							nResolved = static_cast<int>(nSlide);
+							break;
+						}
+					}
+					// Keep one member entry per source relationship even when a
+					// malformed package contains a dangling r:id.  The JavaScript
+					// model then records -1 as unresolved and BPS fails closed rather
+					// than silently shrinking the custom show.
+					arIndexes.push_back(nResolved);
+				}
 			}
-
+			pWriter->StartRecord(0);
+			pWriter->WriteULONG(static_cast<ULONG>(arIndexes.size()));
+			for (const int nSlide : arIndexes)
+			{
+				pWriter->StartRecord(0);
+				pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
+				pWriter->WriteInt1(0, nSlide);
+				pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
+				pWriter->EndRecord();
+			}
 			pWriter->EndRecord();
 		}
 		void CustShow::fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader)
 		{
 			LONG _end_rec = pReader->GetPos() + pReader->GetRecordSize() + 4;
+			pReader->Skip(1);
+			while (true)
+			{
+				BYTE _at = pReader->GetUChar_TypeNode();
+				if (_at == NSBinPptxRW::g_nodeAttributeEnd)
+					break;
+				if (_at == 0)
+					name = pReader->GetString2();
+				else if (_at == 1)
+					id = pReader->GetULong();
+				else if (_at == 2)
+					extLstXml = pReader->GetString2();
+				else
+				{
+					pReader->Seek(_end_rec);
+					return;
+				}
+			}
 
 			while (pReader->GetPos() < _end_rec)
 			{
@@ -549,9 +637,19 @@ namespace PPTX
 					for (ULONG i = 0; i < lCount; ++i)
 					{
 						pReader->Skip(1);
-
-						arSldIdLst.emplace_back();
-						arSldIdLst.back() = pReader->GetString2();
+						LONG nMemberEnd = pReader->GetPos() + pReader->GetRecordSize() + 4;
+						pReader->Skip(1);
+						while (pReader->GetPos() < nMemberEnd)
+						{
+							BYTE _at = pReader->GetUChar_TypeNode();
+							if (_at == NSBinPptxRW::g_nodeAttributeEnd)
+								break;
+							if (_at == 0)
+								arSldIndexLst.push_back(pReader->GetLong());
+							else
+								break;
+						}
+						pReader->Seek(nMemberEnd);
 					}
 					
 				}break;

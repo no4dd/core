@@ -42,7 +42,7 @@ namespace PPTX
 			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
 
-			nullable_int id;
+			nullable_uint id;
 
 		protected:
 			virtual void FillParentPointersForChilds();

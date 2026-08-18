@@ -195,15 +195,24 @@ namespace PPTX
 		public:
 			PPTX_LOGIC_BASE(CustShow)
 
+			nullable_string			name;
+			nullable_uint			id;
+			nullable_string			extLstXml;
 			std::vector<OOX::RId>	arSldIdLst;
+			// PPTY stores zero-based slide indexes. PresentationML stores
+			// relationship ids, which are resolved against p:sldIdLst at the
+			// presentation boundary.
+			std::vector<int>		arSldIndexLst;
 
 			virtual void fromXML(XmlUtils::CXmlNode& node);
 
 			virtual std::wstring toXML() const;
 
 			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+			void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const;
 
 			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
 
 			virtual void FillParentPointersForChilds() {}
@@ -217,7 +226,9 @@ namespace PPTX
 			virtual std::wstring toXML() const;
 			virtual void fromPPTY(NSBinPptxRW::CBinaryFileReader* pReader);
 			virtual void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const;
+			void toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const;
 			virtual void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const;
+			void toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter, const std::vector<Logic::XmlId>& arSlides) const;
 
 			std::vector<CustShow> arCustShowLst;
 

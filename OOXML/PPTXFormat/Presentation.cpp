@@ -187,6 +187,24 @@ namespace PPTX
 				}
 			}
 		}
+		if (sectionLst.IsInit())
+		{
+			for (size_t nSection = 0; nSection < sectionLst->arSectionLst.size(); ++nSection)
+			{
+				nsPresentation::Section& oSection = sectionLst->arSectionLst[nSection];
+				if (oSection.arSldIdLst.empty() || false == oSection.arSldIdLst[0].id.IsInit())
+					continue;
+				const std::wstring sFirstSlideId = oSection.arSldIdLst[0].id.get();
+				for (size_t nSlide = 0; nSlide < sldIdLst.size(); ++nSlide)
+				{
+					if (sldIdLst[nSlide].id.IsInit() && sldIdLst[nSlide].id.get() == sFirstSlideId)
+					{
+						oSection.startIndex = static_cast<int>(nSlide);
+						break;
+					}
+				}
+			}
+		}
 		Normalize();
 	}
 	void Presentation::write(const OOX::CPath& filename, const OOX::CPath& directory, OOX::CContentTypes& content)const

@@ -41,6 +41,11 @@ namespace PPTX
 
 			nullable_string				id;
 			nullable_string				name;
+			// Binary-only index into p:sldIdLst. PresentationML stores section
+			// membership as slide ids, while the JavaScript model edits the first
+			// slide index. Keeping both representations prevents ids with gaps or
+			// an unsectioned prefix from being collapsed during import.
+			nullable_int				startIndex;
 			std::vector<Logic::XmlId>	arSldIdLst;
 
 			virtual void fromXML(XmlUtils::CXmlNode& node);

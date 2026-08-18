@@ -332,6 +332,7 @@ namespace PPTX
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
 			pWriter->WriteString2(0, id);
 			pWriter->WriteString2(1, name);
+			pWriter->WriteInt2(2, startIndex);
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 
 			pWriter->WriteRecordArray(0, 0, arSldIdLst);
@@ -356,6 +357,9 @@ namespace PPTX
 					break;
 				case 1:
 					name = pReader->GetString2();
+					break;
+				case 2:
+					startIndex = pReader->GetLong();
 					break;
 				default:
 					break;

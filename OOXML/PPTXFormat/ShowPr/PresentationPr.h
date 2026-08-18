@@ -89,10 +89,12 @@ namespace PPTX
 			nullable_bool hiddenSlides;
 			nullable_bool scaleToFitPaper;
 
-			std::vector<Logic::Ext> ExtLst;
+			// Preserve the complete extension container.  Treating the children as
+			// generic Logic::Ext objects loses unknown payloads and the wrapper on
+			// the PPTY round-trip.
+			nullable_string extLstXml;
 		protected:
 			virtual void FillParentPointersForChilds();
 		};
 	} // namespace nsPresentation
 } // namespace PPTX
-

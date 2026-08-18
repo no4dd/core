@@ -121,6 +121,15 @@ namespace PPTX
 		void SysClr::fromXML(XmlUtils::CXmlNode& node)
 		{
 			val = node.GetAttribute(_T("val"));
+			std::wstring sLastClr = node.GetAttribute(_T("lastClr"));
+			if (6 == sLastClr.length())
+			{
+				SetHexString(sLastClr);
+				m_bHasLastClr = true;
+				m_nLastRed = red;
+				m_nLastGreen = green;
+				m_nLastBlue = blue;
+			}
 			Modifiers.clear();
 			XmlMacroLoadArray(node, _T("*"), Modifiers, ColorModifier);
 		}
@@ -147,14 +156,27 @@ namespace PPTX
 		}
 		void SysClr::ReadAttributes(XmlUtils::CXmlLiteReader& oReader)
 		{
+			std::wstring sLastClr;
 			WritingElement_ReadAttributes_Start_No_NS( oReader )
 				WritingElement_ReadAttributes_Read_if     ( oReader, _T("val"), val)
+				WritingElement_ReadAttributes_Read_else_if( oReader, _T("lastClr"), sLastClr)
 			WritingElement_ReadAttributes_End_No_NS( oReader )
+			if (6 == sLastClr.length())
+			{
+				SetHexString(sLastClr);
+				m_bHasLastClr = true;
+				m_nLastRed = red;
+				m_nLastGreen = green;
+				m_nLastBlue = blue;
+			}
 		}
 		std::wstring SysClr::toXML() const
 		{
 			std::wstringstream sstream;
-			sstream << boost::wformat( L"%02x%02x%02x" ) % red % green % blue;
+			sstream << boost::wformat( L"%02x%02x%02x" )
+				% (m_bHasLastClr ? m_nLastRed : red)
+				% (m_bHasLastClr ? m_nLastGreen : green)
+				% (m_bHasLastClr ? m_nLastBlue : blue);
 
 			XmlUtils::CAttribute oAttr;
 			oAttr.Write(_T("val"), val.get());
@@ -180,7 +202,10 @@ namespace PPTX
 			pWriter->StartNode(sNodeNamespace + _T("sysClr"));
 
 			std::wstringstream sstream;
-			sstream << boost::wformat( L"%02X%02X%02X" ) % red % green % blue;
+			sstream << boost::wformat( L"%02X%02X%02X" )
+				% (m_bHasLastClr ? m_nLastRed : red)
+				% (m_bHasLastClr ? m_nLastGreen : green)
+				% (m_bHasLastClr ? m_nLastBlue : blue);
 
 			pWriter->StartAttributes();
 			pWriter->WriteAttribute(sAttrNamespace + _T("val"), val.get());
@@ -199,16 +224,21 @@ namespace PPTX
 
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeStart);
 			pWriter->WriteString1(0, val.get());
-
-			SysClr* pColor = const_cast<SysClr*>(this);
-			pColor->FillRGBFromVal();
+			if (!m_bHasLastClr)
+			{
+				// Retain the historical behavior for system colors which omit an
+				// explicit fallback.  An explicit lastClr must never be replaced by
+				// the current host operating-system color, however.
+				SysClr* pColor = const_cast<SysClr*>(this);
+				pColor->FillRGBFromVal();
+			}
 
 			pWriter->WriteBYTE(1);
-			pWriter->WriteBYTE(red);
+			pWriter->WriteBYTE(m_bHasLastClr ? m_nLastRed : red);
 			pWriter->WriteBYTE(2);
-			pWriter->WriteBYTE(green);
+			pWriter->WriteBYTE(m_bHasLastClr ? m_nLastGreen : green);
 			pWriter->WriteBYTE(3);
-			pWriter->WriteBYTE(blue);
+			pWriter->WriteBYTE(m_bHasLastClr ? m_nLastBlue : blue);
 
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 
@@ -231,4 +261,3 @@ namespace PPTX
 		void SysClr::FillParentPointersForChilds(){}
 	} // namespace Logic
 } // namespace PPTX
-

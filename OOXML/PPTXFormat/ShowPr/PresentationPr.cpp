@@ -207,22 +207,7 @@ namespace PPTX
 
 			XmlUtils::CXmlNode list = node.ReadNodeNoNS(L"extLst");
 			if (list.IsValid())
-			{
-				std::vector<XmlUtils::CXmlNode> oNodes;
-				if (list.GetNodes(L"*", oNodes))
-				{
-					size_t nCount = oNodes.size();
-					for (size_t i = 0; i < nCount; ++i)
-					{
-						XmlUtils::CXmlNode& oNode = oNodes[i];
-
-						Logic::Ext element;
-						element.fromXML(oNode);
-
-						ExtLst.push_back(element);
-					}
-				}
-			}
+				extLstXml = list.GetXml();
 		}
 		std::wstring PrintPr::toXML() const
 		{
@@ -234,8 +219,10 @@ namespace PPTX
 			oAttr.WriteLimitNullable(L"prnWhat", prnWhat);
 
 			XmlUtils::CNodeValue oValue;
+			if (extLstXml.IsInit())
+				oValue.m_strValue = *extLstXml;
 
-			return XmlUtils::CreateNode(L"p:PrintPr", oAttr, oValue);
+			return XmlUtils::CreateNode(L"p:printPr", oAttr, oValue);
 		}
 		void PrintPr::toPPTY(NSBinPptxRW::CBinaryFileWriter* pWriter) const
 		{
@@ -245,6 +232,7 @@ namespace PPTX
 				pWriter->WriteBool2(2, scaleToFitPaper);
 				pWriter->WriteLimit2(3, clrMode);
 				pWriter->WriteLimit2(4, prnWhat);
+				pWriter->WriteString2(5, extLstXml);
 			pWriter->WriteBYTE(NSBinPptxRW::g_nodeAttributeEnd);
 		}
 		void PrintPr::toXmlWriter(NSBinPptxRW::CXmlWriter* pWriter) const
@@ -275,8 +263,11 @@ namespace PPTX
 						clrMode = pReader->GetUChar(); break;
 					case 4:
 						prnWhat = pReader->GetUChar(); break;
+					case 5:
+						extLstXml = pReader->GetString2(); break;
 					default:
-							break;
+						pReader->Seek(_end_rec);
+						return;
 				}
 			}
 

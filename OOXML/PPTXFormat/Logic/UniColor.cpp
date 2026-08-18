@@ -218,6 +218,10 @@ namespace PPTX
 									break;
 							}
 						}
+						pColor->m_bHasLastClr = true;
+						pColor->m_nLastRed = pColor->red;
+						pColor->m_nLastGreen = pColor->green;
+						pColor->m_nLastBlue = pColor->blue;
 						Color = pColor;
 						if (pReader->GetPos() < _e)
 						{

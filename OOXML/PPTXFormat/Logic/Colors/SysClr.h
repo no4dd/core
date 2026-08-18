@@ -58,6 +58,13 @@ namespace PPTX
 
 		protected:
 			Limit::SysClrVal val;
+			// `lastClr` is a persisted fallback, not the current host operating-
+			// system colour. Keep it separate because GetRGBA resolves `val` and
+			// mutates ColorBase's working RGB channels.
+			bool m_bHasLastClr = false;
+			unsigned char m_nLastRed = 0;
+			unsigned char m_nLastGreen = 0;
+			unsigned char m_nLastBlue = 0;
 
 		protected:
 			virtual void FillParentPointersForChilds();
@@ -66,4 +73,3 @@ namespace PPTX
 		};
 	} // namespace Logic
 } // namespace PPTX
-

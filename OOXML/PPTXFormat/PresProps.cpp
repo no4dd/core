@@ -32,6 +32,40 @@
 #include "ShowPr/SldAll.h"
 #include "ShowPr/SldRg.h"
 
+namespace
+{
+	void MakeExtensionXmlSelfContained(nullable_string& extLstXml, XmlUtils::CXmlNode& root)
+	{
+		if (!extLstXml.IsInit())
+			return;
+
+		std::wstring& xml = *extLstXml;
+		const size_t openingTagEnd = xml.find(L'>');
+		if (openingTagEnd == std::wstring::npos)
+			return;
+
+		const std::wstring openingTag = xml.substr(0, openingTagEnd);
+		std::vector<std::wstring> names;
+		std::vector<std::wstring> values;
+		root.GetAllAttributes(names, values);
+
+		std::wstring declarations;
+		for (size_t i = 0; i < names.size() && i < values.size(); ++i)
+		{
+			if (names[i] != L"xmlns" && names[i].find(L"xmlns:") != 0)
+				continue;
+			if (openingTag.find(L" " + names[i] + L"=") != std::wstring::npos)
+				continue;
+
+			declarations += L" " + names[i] + L"=\"" +
+				XmlUtils::EncodeXmlString(values[i], false) + L"\"";
+		}
+
+		if (!declarations.empty())
+			xml.insert(openingTagEnd, declarations);
+	}
+}
+
 namespace PPTX
 {
 	PresProps::PresProps(OOX::Document* pMain) : WrapperFile(pMain), PPTX::FileContainer(pMain)
@@ -56,6 +90,8 @@ namespace PPTX
 
 		showPr = oNode.ReadNode(L"p:showPr");
 		printPr = oNode.ReadNode(L"p:printPr");
+		if (printPr.is_init())
+			MakeExtensionXmlSelfContained(printPr->extLstXml, oNode);
 		
 		if(showPr.is_init())
 			showPr->SetParentFilePointer(this);

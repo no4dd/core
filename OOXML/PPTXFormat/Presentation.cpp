@@ -40,6 +40,40 @@
 
 #include "../../MsBinaryFile/Common/Vba/VbaReader.h"
 
+namespace
+{
+	void MakeExtensionXmlSelfContained(nullable_string& extLstXml, XmlUtils::CXmlNode& root)
+	{
+		if (!extLstXml.IsInit())
+			return;
+
+		std::wstring& xml = *extLstXml;
+		const size_t openingTagEnd = xml.find(L'>');
+		if (openingTagEnd == std::wstring::npos)
+			return;
+
+		const std::wstring openingTag = xml.substr(0, openingTagEnd);
+		std::vector<std::wstring> names;
+		std::vector<std::wstring> values;
+		root.GetAllAttributes(names, values);
+
+		std::wstring declarations;
+		for (size_t i = 0; i < names.size() && i < values.size(); ++i)
+		{
+			if (names[i] != L"xmlns" && names[i].find(L"xmlns:") != 0)
+				continue;
+			if (openingTag.find(L" " + names[i] + L"=") != std::wstring::npos)
+				continue;
+
+			declarations += L" " + names[i] + L"=\"" +
+				XmlUtils::EncodeXmlString(values[i], false) + L"\"";
+		}
+
+		if (!declarations.empty())
+			xml.insert(openingTagEnd, declarations);
+	}
+}
+
 namespace PPTX
 {
 	Presentation::Presentation(OOX::Document *pMain) : WrapperFile(pMain), PPTX::FileContainer(pMain)
@@ -104,7 +138,12 @@ namespace PPTX
 				else if (L"custShowLst" == strName)
 				{
 					custShowLst = oNode;
-					if (custShowLst.is_init()) custShowLst->SetParentFilePointer(this);
+					if (custShowLst.is_init())
+					{
+						for (auto& show : custShowLst->arCustShowLst)
+							MakeExtensionXmlSelfContained(show.extLstXml, oNodeRoot);
+						custShowLst->SetParentFilePointer(this);
+					}
 				}
 				else if (L"defaultTextStyle" == strName)
 				{

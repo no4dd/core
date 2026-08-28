@@ -23,6 +23,7 @@ public:
 	JSSmart<CJSValue> SetFileId(JSSmart<CJSValue> fileId);
 	JSSmart<CJSValue> GetFileId();
 	JSSmart<CJSValue> GetFileBinary(JSSmart<CJSValue> file);
+	JSSmart<CJSValue> GetSmartArtBinary(JSSmart<CJSValue> kind, JSSmart<CJSValue> name);
 	JSSmart<CJSValue> GetFontBinary(JSSmart<CJSValue> file);
 	JSSmart<CJSValue> GetFontsDirectory();
 	JSSmart<CJSValue> GetFileString(JSSmart<CJSValue> file);

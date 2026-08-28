@@ -221,6 +221,7 @@ namespace NSNativeControl
 		std::vector<std::wstring>* m_pChanges;
 
 		std::wstring m_strFontsDirectory;
+		std::wstring m_strSdkDirectory;
 
 		std::map<std::wstring, std::wstring> m_map_fonts;
 		std::wstring m_sDefaultFont;

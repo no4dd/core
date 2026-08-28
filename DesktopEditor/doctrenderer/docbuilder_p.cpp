@@ -302,6 +302,7 @@ bool CV8RealTimeWorker::OpenFile(const std::wstring& sBasePath, const std::wstri
 		}
 
 		pNative->m_strFontsDirectory = sBasePath + L"/sdkjs/common";
+		pNative->m_strSdkDirectory = config ? config->m_strSdkPath : sBasePath + L"/sdkjs";
 		pNative->m_strImagesDirectory = path + L"/media";
 
 		pNative->CheckFonts();

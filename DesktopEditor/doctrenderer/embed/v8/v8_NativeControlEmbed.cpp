@@ -13,6 +13,7 @@ namespace NSNativeControlEmbed
 	FUNCTION_WRAPPER_V8_1(_SetFileId, SetFileId)
 	FUNCTION_WRAPPER_V8_0(_GetFileId, GetFileId)
 	FUNCTION_WRAPPER_V8_1(_GetFileBinary, GetFileBinary)
+	FUNCTION_WRAPPER_V8_2(_GetSmartArtBinary, GetSmartArtBinary)
 	FUNCTION_WRAPPER_V8_1(_GetFontBinary, GetFontBinary)
 	FUNCTION_WRAPPER_V8_0(_GetFontsDirectory, GetFontsDirectory)
 	FUNCTION_WRAPPER_V8_1(_GetFileString, GetFileString)
@@ -43,6 +44,7 @@ namespace NSNativeControlEmbed
 		NSV8Objects::Template_Set(result, "SetFileId",	_SetFileId);
 		NSV8Objects::Template_Set(result, "GetFileId",	_GetFileId);
 		NSV8Objects::Template_Set(result, "GetFileBinary",	_GetFileBinary);
+		NSV8Objects::Template_Set(result, "GetSmartArtBinary",	_GetSmartArtBinary);
 		NSV8Objects::Template_Set(result, "GetFontBinary",	_GetFontBinary);
 		NSV8Objects::Template_Set(result, "GetFontsDirectory",	_GetFontsDirectory);
 		NSV8Objects::Template_Set(result, "GetFileString",	_GetFileString);

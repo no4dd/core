@@ -10,6 +10,7 @@
 -(JSValue*) SetFileId : (JSValue*)fileId;
 -(JSValue*) GetFileId;
 -(JSValue*) GetFileBinary : (JSValue*)file;
+-(JSValue*) GetSmartArtBinary : (JSValue*)kind : (JSValue*)name;
 -(JSValue*) GetFontBinary : (JSValue*)file;
 -(JSValue*) GetFontsDirectory;
 -(JSValue*) GetFileString : (JSValue*)file;
@@ -45,6 +46,7 @@ FUNCTION_WRAPPER_JS_0(GetFilePath, GetFilePath)
 FUNCTION_WRAPPER_JS_1(SetFileId, SetFileId)
 FUNCTION_WRAPPER_JS_0(GetFileId, GetFileId)
 FUNCTION_WRAPPER_JS_1(GetFileBinary, GetFileBinary)
+FUNCTION_WRAPPER_JS_2(GetSmartArtBinary, GetSmartArtBinary)
 FUNCTION_WRAPPER_JS_1(GetFontBinary, GetFontBinary)
 FUNCTION_WRAPPER_JS_0(GetFontsDirectory, GetFontsDirectory)
 FUNCTION_WRAPPER_JS_1(GetFileString, GetFileString)

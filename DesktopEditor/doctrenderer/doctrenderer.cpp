@@ -609,6 +609,7 @@ namespace NSDoctRenderer
 				{
 					pNative->m_pChanges = &m_oParams.m_arChanges;
 					pNative->m_strFontsDirectory = m_oParams.m_strFontsDirectory;
+					pNative->m_strSdkDirectory = m_strSdkPath;
 					pNative->m_strImagesDirectory = m_oParams.m_strImagesDirectory;
 
 					pNative->CheckFonts();

@@ -38,6 +38,53 @@ JSSmart<CJSValue> CNativeControlEmbed::GetFileBinary(JSSmart<CJSValue> file)
 	return CJSContext::createUint8Array(sFilePath);
 }
 
+JSSmart<CJSValue> CNativeControlEmbed::GetSmartArtBinary(JSSmart<CJSValue> kind, JSSmart<CJSValue> name)
+{
+	if (m_pInternal->m_strEditorType != L"presentation" || m_pInternal->m_strSdkDirectory.empty())
+		return CJSContext::createNull();
+
+	const std::wstring sKind = kind->toStringW();
+	std::wstring sFilePath;
+	long nMaximumSize = 0;
+	if (sKind == L"drawing")
+	{
+		sFilePath = m_pInternal->m_strSdkDirectory + L"/common/SmartArts/SmartArtDrawing/SmartArtDrawings.bin";
+		nMaximumSize = 2 * 1024 * 1024;
+	}
+	else if (sKind == L"data")
+	{
+		const std::wstring sName = name->toStringW();
+		if (sName.empty() || sName.length() > 128)
+			return CJSContext::createNull();
+		for (wchar_t symbol : sName)
+		{
+			const bool bAllowed =
+				(symbol >= L'a' && symbol <= L'z') ||
+				(symbol >= L'A' && symbol <= L'Z') ||
+				(symbol >= L'0' && symbol <= L'9') ||
+				symbol == L'_' || symbol == L'-';
+			if (!bAllowed)
+				return CJSContext::createNull();
+		}
+		sFilePath = m_pInternal->m_strSdkDirectory + L"/common/SmartArts/SmartArtData/" + sName + L".bin";
+		nMaximumSize = 512 * 1024;
+	}
+	else
+	{
+		return CJSContext::createNull();
+	}
+
+	NSFile::CFileBinary oFile;
+	if (!oFile.OpenFile(sFilePath))
+		return CJSContext::createNull();
+	const long nSize = oFile.GetFileSize();
+	oFile.CloseFile();
+	if (nSize <= 0 || nSize > nMaximumSize)
+		return CJSContext::createNull();
+
+	return CJSContext::createUint8Array(sFilePath);
+}
+
 JSSmart<CJSValue> CNativeControlEmbed::GetFontBinary(JSSmart<CJSValue> file)
 {
 	// TODO:

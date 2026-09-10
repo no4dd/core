@@ -104,6 +104,9 @@ namespace NSNetwork
 			}
 
 			virtual int DownloadFile() = 0;
+			// An explicit network deny may admit only a separately verified scoped download.
+			// Platforms without that transport retain the deny; uploads never use this path.
+			virtual int DownloadRestricted() { m_sDownloadFilePath.clear(); return 1; }
 			virtual int UploadFile() = 0;
 			virtual int UploadData() = 0;
 
@@ -251,7 +254,8 @@ namespace NSNetwork
 				}
 				else
 				{
-					hrResultAll = 1;
+					hrResultAll = m_pInternal->m_eLoadType == m_pInternal->DOWNLOADFILE ?
+						m_pInternal->DownloadRestricted() : 1;
 				}
 
 				if (0 == hrResultAll)

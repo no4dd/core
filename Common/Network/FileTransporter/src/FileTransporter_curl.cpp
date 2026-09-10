@@ -39,6 +39,7 @@
 #else
 
 #include "transport_external.h"
+#include "restricted_download.h"
 
 #endif
 
@@ -226,6 +227,26 @@ namespace NSNetwork
 				return fd;
 			}
 #else
+			virtual int DownloadRestricted() override
+			{
+				const std::string allowList = NSProcessEnv::GetStringValueA("allowList");
+				if (!RestrictedDownload::allowed(U_TO_UTF8(m_sDownloadFileUrl), allowList))
+				{
+					m_sDownloadFilePath.clear();
+					return 1;
+				}
+				if (m_sDownloadFilePath.empty())
+				{
+					m_sDownloadFilePath = NSFile::CFileBinary::CreateTempFileWithUniqueName(NSDirectory::GetTempPath(), L"DW");
+					if (NSFile::CFileBinary::Exists(m_sDownloadFilePath)) NSFile::CFileBinary::Remove(m_sDownloadFilePath);
+				}
+				const int result = RestrictedDownload::download(U_TO_UTF8(m_sDownloadFileUrl),
+					U_TO_UTF8(m_sDownloadFilePath), allowList, m_check_aborted);
+				// The scoped helper removes only its own partial file. Prevent legacy
+				// failure cleanup/destruction from deleting an existing caller-owned file.
+				if (result != 0) m_sDownloadFilePath.clear();
+				return result;
+			}
 			virtual int DownloadFile() override
 			{
 				if (m_sDownloadFilePath.empty())

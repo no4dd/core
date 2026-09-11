@@ -100,9 +100,8 @@ def build_and_install():
             [   "emmake",
                 "make",
                 f"-j{os.cpu_count()}",
-                "build_generated",
-                "libcrypto.a",
-                "libssl.a",
+                # OpenSSL's public target orders generated headers before compilation.
+                "build_libs",
             ],
             "Build",
             nc.work_dir,

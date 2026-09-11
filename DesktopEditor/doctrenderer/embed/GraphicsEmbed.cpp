@@ -1,5 +1,6 @@
 #include "../graphics.h"
 #include <map>
+#include <cmath>
 #include "../../../Common/Network/FileTransporter/include/FileTransporter.h"
 
 // APPLICATION INFO
@@ -339,13 +340,40 @@ JSSmart<CJSValue> CGraphicsEmbed::ClearLastFont()
 	m_pInternal->ClearLastFont();
 	return NULL;
 }
+// srcRect contains visible source edges in percent (right/bottom default 100).
+// The embedded renderer used to discard it, stretching cropped pictures in
+// every headless PDF/thumbnail while preserving the crop in the PPTX itself.
+static void DrawImageWithSourceRect(NSGraphics::CGraphics* graphics, const std::wstring& url,
+    double x, double y, double w, double h, BYTE alpha, JSSmart<CJSValue> source)
+{
+    if (!source->isObject())
+    {
+        graphics->drawImage(url, x, y, w, h, alpha);
+        return;
+    }
+    JSSmart<CJSObject> rect = source->toObject();
+    auto edge = [&rect](const char* key, double fallback) {
+        auto value = rect->get(key);
+        return value->isNumber() && std::isfinite(value->toDouble()) ? value->toDouble() : fallback;
+    };
+    const double left = edge("l", 0), top = edge("t", 0);
+    const double right = edge("r", 100), bottom = edge("b", 100);
+    if (right <= left || bottom <= top) return;
+    const double imageWidth = w * 100 / (right - left);
+    const double imageHeight = h * 100 / (bottom - top);
+    graphics->SaveGrState();
+    graphics->AddClipRect(x, y, w, h);
+    graphics->drawImage(url, x - imageWidth * left / 100, y - imageHeight * top / 100, imageWidth, imageHeight, alpha);
+    graphics->RestoreGrState();
+}
+
 JSSmart<CJSValue> CGraphicsEmbed::drawImage2(JSSmart<CJSValue> img, JSSmart<CJSValue> x, JSSmart<CJSValue> y, JSSmart<CJSValue> w, JSSmart<CJSValue> h, JSSmart<CJSValue> alpha, JSSmart<CJSValue> srcRect)
 {
 	std::wstring sUrl = img->toStringW();
 	if (m_pInternal->m_pAppImage && m_pInternal->m_pAppImage->m_internal->IsNeedDownload(sUrl))
 		sUrl = m_pInternal->m_pAppImage->m_internal->GetImagePath(sUrl);
 
-	m_pInternal->drawImage(sUrl, x->toDouble(), y->toDouble(), w->toDouble(), h->toDouble(), alpha->toInt32());
+	DrawImageWithSourceRect(m_pInternal, sUrl, x->toDouble(), y->toDouble(), w->toDouble(), h->toDouble(), alpha->toInt32(), srcRect);
 	return NULL;
 }
 JSSmart<CJSValue> CGraphicsEmbed::drawImage (JSSmart<CJSValue> img, JSSmart<CJSValue> x, JSSmart<CJSValue> y, JSSmart<CJSValue> w, JSSmart<CJSValue> h, JSSmart<CJSValue> alpha, JSSmart<CJSValue> srcRect, JSSmart<CJSValue> nativeImage)
@@ -354,7 +382,7 @@ JSSmart<CJSValue> CGraphicsEmbed::drawImage (JSSmart<CJSValue> img, JSSmart<CJSV
 	if (m_pInternal->m_pAppImage && m_pInternal->m_pAppImage->m_internal->IsNeedDownload(sUrl))
 		sUrl = m_pInternal->m_pAppImage->m_internal->GetImagePath(sUrl);
 
-	m_pInternal->drawImage(img->toStringW(), x->toDouble(), y->toDouble(), w->toDouble(), h->toDouble(), alpha->toInt32());
+	DrawImageWithSourceRect(m_pInternal, sUrl, x->toDouble(), y->toDouble(), w->toDouble(), h->toDouble(), alpha->toInt32(), srcRect);
 	return NULL;
 }
 JSSmart<CJSValue> CGraphicsEmbed::GetFont()
@@ -632,6 +660,66 @@ JSSmart<CJSValue> CGraphicsEmbed::DrawFootnoteRect(JSSmart<CJSValue> x, JSSmart<
 	m_pInternal->DrawFootnoteRect(x->toDouble(), y->toDouble(), w->toDouble(), h->toDouble());
 	return NULL;
 }
+// Blur a temporary render surface; this does not alter the document model.
+JSSmart<CJSValue> CGraphicsEmbed::Blur(JSSmart<CJSValue> sigmaValue)
+{
+    const double sigma = sigmaValue->toDouble();
+    auto& frame = m_pInternal->m_oFrame;
+    const int width = frame.get_Width(), height = frame.get_Height();
+    BYTE* data = frame.get_Data();
+    if (!data || width <= 0 || height <= 0 || width > 4096 || height > 4096 ||
+        size_t(width) * height > 4 * 1024 * 1024 ||
+        !std::isfinite(sigma) || sigma <= 0 || sigma > 256)
+        return CJSContext::createUndefined();
+
+    // Three box convolutions approximate a Gaussian in linear time. Work in
+    // premultiplied colour so transparent pixels cannot create dark fringes.
+    const size_t size = size_t(width) * height * 4;
+    std::vector<float> pixels(size), scratch(size);
+    for (size_t i = 0; i < size; i += 4) {
+        const float alpha = data[i + 3] / 255.0f;
+        for (int c = 0; c < 3; ++c) pixels[i + c] = data[i + c] * alpha;
+        pixels[i + 3] = data[i + 3];
+    }
+    int lower = int(std::floor(std::sqrt(4 * sigma * sigma + 1)));
+    if (!(lower & 1)) --lower;
+    lower = std::max(1, lower);
+    const int upper = lower + 2;
+    const int lowerCount = int(std::round((12 * sigma * sigma - 3 * lower * lower -
+        12 * lower - 9) / (-4.0 * lower - 4)));
+    for (int pass = 0; pass < 3; ++pass) {
+        const int radius = ((pass < lowerCount ? lower : upper) - 1) / 2;
+        const float divisor = float(2 * radius + 1);
+        for (int axis = 0; axis < 2; ++axis) {
+            const int lines = axis ? width : height, length = axis ? height : width;
+            const size_t step = axis ? size_t(width) * 4 : 4;
+            for (int line = 0; line < lines; ++line) {
+                const size_t base = axis ? size_t(line) * 4 : size_t(line) * width * 4;
+                float sum[4] = {};
+                for (int j = 0; j <= radius && j < length; ++j)
+                    for (int c = 0; c < 4; ++c) sum[c] += pixels[base + j * step + c];
+                for (int j = 0; j < length; ++j) {
+                    for (int c = 0; c < 4; ++c) scratch[base + j * step + c] = sum[c] / divisor;
+                    const int remove = j - radius, add = j + radius + 1;
+                    for (int c = 0; c < 4; ++c) {
+                        if (remove >= 0) sum[c] -= pixels[base + remove * step + c];
+                        if (add < length) sum[c] += pixels[base + add * step + c];
+                    }
+                }
+            }
+            pixels.swap(scratch);
+        }
+    }
+    for (size_t i = 0; i < size; i += 4) {
+        const float alpha = pixels[i + 3];
+        data[i + 3] = BYTE(std::max(0.0f, std::min(255.0f, alpha + 0.5f)));
+        for (int c = 0; c < 3; ++c)
+            data[i + c] = alpha > 0.01f ? BYTE(std::max(0.0f,
+                std::min(255.0f, pixels[i + c] * 255.0f / alpha + 0.5f))) : 0;
+    }
+    return CJSContext::createUndefined();
+}
+
 JSSmart<CJSValue> CGraphicsEmbed::toDataURL(JSSmart<CJSValue> type)
 {
 	return CJSContext::createString(m_pInternal->toDataURL(type->toStringW()));

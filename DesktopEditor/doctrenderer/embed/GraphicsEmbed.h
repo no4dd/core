@@ -151,6 +151,7 @@ public:
 	JSSmart<CJSValue> DrawPolygon(JSSmart<CJSValue> oPath, JSSmart<CJSValue> lineWidth, JSSmart<CJSValue> shift);
 	JSSmart<CJSValue> DrawFootnoteRect(JSSmart<CJSValue> x, JSSmart<CJSValue> y, JSSmart<CJSValue> w, JSSmart<CJSValue> h);
 	// new methods
+	JSSmart<CJSValue> Blur(JSSmart<CJSValue> sigma);
 	JSSmart<CJSValue> toDataURL(JSSmart<CJSValue> type);
 	JSSmart<CJSValue> GetPenColor();
 	JSSmart<CJSValue> GetBrushColor();

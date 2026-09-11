@@ -92,6 +92,7 @@
 -(JSValue*) DrawPresentationComment : (JSValue*)type : (JSValue*)x : (JSValue*)y : (JSValue*)w : (JSValue*)h;
 -(JSValue*) DrawPolygon : (JSValue*)oPath : (JSValue*)lineWidth : (JSValue*)shift;
 -(JSValue*) DrawFootnoteRect : (JSValue*)x : (JSValue*)y : (JSValue*)w : (JSValue*)h;
+-(JSValue*) Blur : (JSValue*)sigma;
 -(JSValue*) toDataURL : (JSValue*)type;
 -(JSValue*) GetPenColor;
 -(JSValue*) GetBrushColor;
@@ -209,6 +210,7 @@ FUNCTION_WRAPPER_JS_0(Drawing_EndCheckBounds, Drawing_EndCheckBounds)
 FUNCTION_WRAPPER_JS_5(DrawPresentationComment, DrawPresentationComment)
 FUNCTION_WRAPPER_JS_3(DrawPolygon, DrawPolygon)
 FUNCTION_WRAPPER_JS_4(DrawFootnoteRect, DrawFootnoteRect)
+FUNCTION_WRAPPER_JS_1(Blur, Blur)
 FUNCTION_WRAPPER_JS_1(toDataURL, toDataURL)
 FUNCTION_WRAPPER_JS_0(GetPenColor, GetPenColor)
 FUNCTION_WRAPPER_JS_0(GetBrushColor, GetBrushColor)

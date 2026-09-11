@@ -1105,6 +1105,8 @@ namespace PdfWriter
             if (!m_pTransparencyGroup)
             {
                 m_pTransparencyGroup = new CDictObject();
+                // Shared by pages and soft-mask forms; a direct dictionary can only have one owner.
+                m_pXref->Add(m_pTransparencyGroup);
                 m_pTransparencyGroup->Add("Type", "Group");
                 m_pTransparencyGroup->Add("S", "Transparency");
                 m_pTransparencyGroup->Add("CS", "DeviceRGB");
@@ -1133,7 +1135,8 @@ namespace PdfWriter
 		pStream->WriteReal(dWidth);
 		pStream->WriteChar(' ');
 		pStream->WriteReal(dHeight);
-		pStream->WriteStr(" re\012W\012\n\012/S1 sh\012");
+		// Finish the clipping path before painting the mask shading.
+		pStream->WriteStr(" re\nW\nn\n/S1 sh\n");
 
 		// Create a mask object for the graphic state
 		CDictObject* pMask = new CDictObject();

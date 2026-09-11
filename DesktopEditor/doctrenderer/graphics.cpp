@@ -1209,6 +1209,9 @@ namespace NSGraphics
 	}
 	void CGraphics::put_brushTexture(std::wstring src, int type)
 	{
+		// Texture fill bounds are independent of gradient brush bounds.
+		// Clear the previous picture's crop before receiving this picture's frame.
+		m_pRenderer->BrushRect(0, 0, 0, 0, 0);
 		if (src.find(L"data:") == 0)
 		{
 			std::wstring strImage = m_pAppImage->GetImagesDirectory() + L"/texture.png";
@@ -1371,9 +1374,13 @@ namespace NSGraphics
 			m_pRenderer->GetFullTransform()->TransformPoint(x, y);
 			m_pRenderer->GetFullTransform()->TransformPoint(r, b);
 			m_pRenderer->BrushBounds(x, y, r - x, b - y);
+			m_pRenderer->BrushRect(1, x, y, r - x, b - y);
 		}
 		else
+		{
 			m_pRenderer->BrushBounds(x, y, w, h);
+			m_pRenderer->BrushRect(1, x, y, w, h);
+		}
 	}
 	double CGraphics::GetlineWidth()
 	{
